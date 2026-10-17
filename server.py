@@ -112,9 +112,14 @@ class FirebaseStore:
                 else:
                     local_config = ROOT / '.server.local.json'
                     key_path = None
-                    if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and local_config.is_file():
+                    service_account_json = os.getenv('TRAVEL_FIREBASE_SERVICE_ACCOUNT', '')
+                    if not service_account_json and not os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and local_config.is_file():
                         key_path = json.loads(local_config.read_text(encoding='utf-8-sig')).get('credentialPath')
-                    if key_path:
+                    if service_account_json:
+                        credential = credentials.Certificate(json.loads(service_account_json))
+                        if credential.project_id != PUBLIC_CONFIG['projectId']:
+                            raise ValueError('Firebase project mismatch')
+                    elif key_path:
                         key_file = Path(key_path).resolve()
                         if key_file.is_relative_to(ROOT):
                             raise ValueError('Service account must be outside project')
@@ -337,7 +342,8 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             path = urlsplit(self.path).path
             origin = self.headers.get("Origin")
-            if origin and origin != f"http://{self.headers.get('Host')}":
+            scheme = 'https' if os.getenv('VERCEL') == '1' else 'http'
+            if origin and origin != f"{scheme}://{self.headers.get('Host')}":
                 raise ApiError("다른 출처의 요청은 허용하지 않습니다.", 403)
             if self.command == "GET" and path == "/api/config":
                 return self.json_response({"firebaseConfig": PUBLIC_CONFIG, "adminEmail": os.getenv("TRAVEL_ADMIN_EMAIL", "admin@gmail.com"),

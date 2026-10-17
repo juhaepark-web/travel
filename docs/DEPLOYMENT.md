@@ -1,5 +1,22 @@
 # GitHub 및 배포 안내
 
+## 현재 Vercel 연결
+
+대표 주소: https://travel-murex-beta.vercel.app
+
+배포된 Python API의 `/api/health` 응답을 확인했다. 현재 Firebase 서버 인증 환경변수 설정이 필요하다. 서버는 Vercel에서 HTTPS 동일 출처 요청을 허용하며, 다른 출처 요청은 계속 차단한다.
+
+Vercel의 해당 travel 프로젝트 → Settings → Environment Variables에 다음 값을 추가한다.
+
+- Key: `TRAVEL_FIREBASE_SERVICE_ACCOUNT`
+- Value: 프로젝트 폴더 밖의 Firebase 서비스 계정 JSON 파일 전체 내용. 파일 경로가 아니라 JSON 내용이다. 따옴표를 바깥에 덧붙이지 않는다.
+- Environment: Production. 필요한 경우 Preview에도 별도 설정한다.
+- Secret 또는 Sensitive 선택이 제공되면 활성화한다.
+
+저장 후 최신 main 커밋으로 Redeploy한다. 이 값은 서버에서만 읽으며 `/api/config`에는 반환하지 않는다. 키 내용은 GitHub나 채팅에 올리지 않는다. 인증 설정은 환경변수 → 로컬 경로 설정 → ADC 순으로 선택한다.
+
+재배포 후 `/api/health`의 ready가 true인지, 가입·로그인·예약 흐름이 실제 도메인에서 동작하는지 확인한다. Firebase Authentication의 허용 도메인에 `travel-murex-beta.vercel.app`도 추가한다.
+
 ## 현재 서버 구조
 
 정적 화면 외에 Python API가 추가되었습니다. Vercel에 정적 파일만 배포하면 /api 경로가 동작하지 않아 회원 정보 저장·관리자 관리·예약을 사용할 수 없습니다. 현재 server.py는 127.0.0.1 개발용 서버이며 운영용 HTTP 서버가 아닙니다.
